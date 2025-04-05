@@ -1,183 +1,181 @@
-"use client";
+'use client'
 
-import { useState, useRef, useEffect } from "react";
-import { Button } from "@heroui/button";
-import { MicrophoneIcon, StopIcon } from "@heroicons/react/24/solid";
-import { Line } from "react-chartjs-2";
+import { useState, useRef, useEffect } from 'react'
+import { Button } from '@heroui/button'
+import { MicrophoneIcon, StopIcon } from '@heroicons/react/24/solid'
+import { Line } from 'react-chartjs-2'
 import {
   Chart,
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
-} from "chart.js";
+} from 'chart.js'
 import {
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
-} from "@heroui/dropdown";
+} from '@heroui/dropdown'
 
-import styles from "./page.module.css";
+import styles from './page.module.css'
 
-Chart.register(CategoryScale, LinearScale, PointElement, LineElement);
+Chart.register(CategoryScale, LinearScale, PointElement, LineElement)
 
-type WaveformData = number[];
+type WaveformData = number[]
 
 export default function RecordPage(): JSX.Element {
-  const [recording, setRecording] = useState<boolean>(false);
-  const [time, setTime] = useState<number>(0);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
-    null,
-  );
+  const [recording, setRecording] = useState<boolean>(false)
+  const [time, setTime] = useState<number>(0)
+  const [stream, setStream] = useState<MediaStream | null>(null)
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
   // We'll use a ref to store the audio chunks.
-  const audioChunksRef = useRef<Blob[]>([]);
+  const audioChunksRef = useRef<Blob[]>([])
   // Optionally, if you need to display the count, you can also have state:
-  const [chunkCount, setChunkCount] = useState<number>(0);
+  const [chunkCount, setChunkCount] = useState<number>(0)
 
-  const [waveformData, setWaveformData] = useState<WaveformData>([]);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const dataArrayRef = useRef<Uint8Array | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
-  const [section, setSection] = useState<string | null>(null);
+  const [waveformData, setWaveformData] = useState<WaveformData>([])
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const analyserRef = useRef<AnalyserNode | null>(null)
+  const dataArrayRef = useRef<Uint8Array | null>(null)
+  const animationFrameRef = useRef<number | null>(null)
+  const [section, setSection] = useState<string | null>(null)
 
   useEffect(() => {
     if (recording) {
-      timerRef.current = setInterval(() => setTime((prev) => prev + 1), 1000);
+      timerRef.current = setInterval(() => setTime((prev) => prev + 1), 1000)
     } else if (timerRef.current) {
-      clearInterval(timerRef.current);
+      clearInterval(timerRef.current)
     }
 
     return () => {
       if (timerRef.current) {
-        clearInterval(timerRef.current);
+        clearInterval(timerRef.current)
       }
-    };
-  }, [recording]);
+    }
+  }, [recording])
 
   const updateWaveform = () => {
     if (analyserRef.current && dataArrayRef.current) {
-      analyserRef.current.getByteFrequencyData(dataArrayRef.current);
-      setWaveformData(Array.from(dataArrayRef.current));
-      animationFrameRef.current = requestAnimationFrame(updateWaveform);
+      analyserRef.current.getByteFrequencyData(dataArrayRef.current)
+      setWaveformData(Array.from(dataArrayRef.current))
+      animationFrameRef.current = requestAnimationFrame(updateWaveform)
     }
-  };
+  }
 
   const startRecording = async (): Promise<void> => {
-    if (!section) setSection("Lecture 1");
+    if (!section) setSection('Lecture 1')
     try {
       const audioStream: MediaStream =
-        await navigator.mediaDevices.getUserMedia({ audio: true });
+        await navigator.mediaDevices.getUserMedia({ audio: true })
       const recorder: MediaRecorder = new MediaRecorder(audioStream, {
-        mimeType: "audio/webm;codecs=opus",
-      });
+        mimeType: 'audio/webm;codecs=opus',
+      })
 
-      setStream(audioStream);
-      setMediaRecorder(recorder);
+      setStream(audioStream)
+      setMediaRecorder(recorder)
       // Clear the ref when starting a new recording.
-      audioChunksRef.current = [];
-      setChunkCount(0);
-      setRecording(true);
-      recorder.start();
+      audioChunksRef.current = []
+      setChunkCount(0)
+      setRecording(true)
+      recorder.start()
 
-      const audioContext: AudioContext = new AudioContext();
+      const audioContext: AudioContext = new AudioContext()
       const source: MediaStreamAudioSourceNode =
-        audioContext.createMediaStreamSource(audioStream);
-      const analyser: AnalyserNode = audioContext.createAnalyser();
+        audioContext.createMediaStreamSource(audioStream)
+      const analyser: AnalyserNode = audioContext.createAnalyser()
 
-      analyser.fftSize = 128;
-      source.connect(analyser);
-      audioContextRef.current = audioContext;
-      analyserRef.current = analyser;
-      dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount);
+      analyser.fftSize = 128
+      source.connect(analyser)
+      audioContextRef.current = audioContext
+      analyserRef.current = analyser
+      dataArrayRef.current = new Uint8Array(analyser.frequencyBinCount)
 
-      updateWaveform();
+      updateWaveform()
 
       recorder.ondataavailable = (e: BlobEvent) => {
         // Push new data into the ref.
-        audioChunksRef.current.push(e.data);
+        audioChunksRef.current.push(e.data)
         // Optionally update state for UI display.
-        setChunkCount(audioChunksRef.current.length);
-      };
+        setChunkCount(audioChunksRef.current.length)
+      }
       recorder.onstop = async () => {
         if (audioContextRef.current) {
-          audioContextRef.current.close();
-          audioContextRef.current = null;
+          audioContextRef.current.close()
+          audioContextRef.current = null
         }
         if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
+          cancelAnimationFrame(animationFrameRef.current)
         }
-        await uploadAudio();
-      };
+        await uploadAudio()
+      }
     } catch (err) {
-      console.error("Error recording audio:", err);
+      console.error('Error recording audio:', err)
     }
-  };
+  }
 
   const stopRecording = (): void => {
     if (mediaRecorder) {
-      mediaRecorder.stop();
-      stream?.getTracks().forEach((track) => track.stop());
+      mediaRecorder.stop()
+      stream?.getTracks().forEach((track) => track.stop())
     }
-    setRecording(false);
-    setTime(0);
-  };
+    setRecording(false)
+    setTime(0)
+  }
 
   async function uploadAudio() {
-    const formData = new FormData();
+    const formData = new FormData()
 
     // Log the current audio chunks from the ref.
-    console.log("Audio chunks count:", audioChunksRef.current.length);
+    console.log('Audio chunks count:', audioChunksRef.current.length)
 
     const audioBlob = new Blob(audioChunksRef.current, {
       type: mediaRecorder?.mimeType,
-    });
+    })
     // Create a File with proper type information
-    const file = new File([audioBlob], "recording", {
+    const file = new File([audioBlob], 'recording', {
       type: audioBlob.type, // This preserves the MIME type
       lastModified: Date.now(),
-    });
+    })
 
-    ``;
+    ;``
 
-    formData.append("file", file);
-    formData.append("section", section!);
+    formData.append('file', file)
+    formData.append('section', section!)
 
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}recognition/convert/`,
         {
-          method: "POST",
+          method: 'POST',
           body: formData,
-        },
-      );
+        }
+      )
 
-      const serverResult = await response.json();
+      const serverResult = await response.json()
 
-      console.log("Server response:", serverResult);
-      console.info("Transcription:", serverResult.transcription);
+      console.log('Server response:', serverResult)
+      console.info('Transcription:', serverResult.transcription)
     } catch (error) {
-      console.error("Upload failed:", error);
+      console.error('Upload failed:', error)
     }
     // Clear the ref after uploading.
-    audioChunksRef.current = [];
-    setChunkCount(0);
+    audioChunksRef.current = []
+    setChunkCount(0)
   }
 
-  const sections = ["Lecture 1", "Lecture 2", "Lecture 3"];
+  const sections = ['Lecture 1', 'Lecture 2', 'Lecture 3']
   const selectSection = (section: string) => {
-    setSection(section);
-  };
+    setSection(section)
+  }
 
   return (
     <div className={styles.container} data-component="RecordPage">
       <div className={styles.container}>
         <Dropdown>
           <DropdownTrigger>
-            <Button variant="bordered">{section ?? "Select A Section"}</Button>
+            <Button variant="bordered">{section ?? 'Select A Section'}</Button>
           </DropdownTrigger>
           <DropdownMenu aria-label="Static Actions">
             {sections.map((section, index) => (
@@ -205,11 +203,11 @@ export default function RecordPage(): JSX.Element {
         {recording && (
           <Line
             data={{
-              labels: Array(waveformData.length).fill(""),
+              labels: Array(waveformData.length).fill(''),
               datasets: [
                 {
                   data: waveformData,
-                  borderColor: "#3b82f6",
+                  borderColor: '#3b82f6',
                   borderWidth: 2,
                   tension: 0.2,
                 },
@@ -225,5 +223,5 @@ export default function RecordPage(): JSX.Element {
         )}
       </div>
     </div>
-  );
+  )
 }
