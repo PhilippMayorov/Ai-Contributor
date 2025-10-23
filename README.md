@@ -5,14 +5,13 @@
 The WFN AI Contribution Tracker is an intelligent classroom participation monitoring system designed specifically for professors in courses 2257 and HBA-1. This application leverages advanced speech recognition and AI technology to automatically track, transcribe, and evaluate student contributions during live lectures, streamlining the participation marking process.
 
 
-Pictures: 
-
+## image of each main interface where professors can track students grades
 
 <img width="1353" height="766" alt="Screenshot 2025-04-05 at 3 46 33 PM" src="https://github.com/user-attachments/assets/7053ba22-1179-44f6-ba6c-a8bf5e2d17c5" />
 
+## image of a specific lecture, showcasing each students contribution grade that professors can then modify after lecture. 
 
 <img width="1385" height="811" alt="Screenshot 2025-04-05 at 3 46 17 PM" src="https://github.com/user-attachments/assets/b7386a73-82d9-4e17-8c6b-9ebac196797a" />
-
 
 
 ## 🎯 Purpose
